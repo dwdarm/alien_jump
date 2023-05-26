@@ -8,6 +8,10 @@
 #include "entities/player.h"
 #include "entities/enemies/enemies.h"
 
+#if defined(PLATFORM_WEB)
+    #include <emscripten/emscripten.h>
+#endif
+
 #define WINDOW_WIDTH 720
 #define WINDOW_HEIGHT 480
 #define WINDOW_TITLE "jump alien"
@@ -219,22 +223,32 @@ class Game {
 
 };
 
+void drawLoop(void* arg) {
+    dwdarm::Game* game = (dwdarm::Game*)arg;
+
+    game->update();
+
+    BeginDrawing();
+        ClearBackground(RAYWHITE);
+        game->draw();
+    EndDrawing();
+}
+
+
 int main() {
 
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE);
-    SetTargetFPS(60);
 
     dwdarm::Game game;
 
-    while (!WindowShouldClose()) {
-
-        game.update();
-
-        BeginDrawing();
-            ClearBackground(RAYWHITE);
-            game.draw();
-        EndDrawing();
-    }
+    #if defined(PLATFORM_WEB)
+        emscripten_set_main_loop_arg(drawLoop, (void*)&game,0, 1);
+    #else
+        SetTargetFPS(60);
+        while (!WindowShouldClose()) {
+            drawLoop((void*)&game);
+        }
+    #endif
 
     CloseWindow();  
 
